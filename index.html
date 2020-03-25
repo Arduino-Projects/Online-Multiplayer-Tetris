@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tetris!</title>
+    <meta charset="UTF-8" />
+
+    <style>
+      #gamescreen {
+        border: 3px solid rgb(2, 2, 33);
+        background-color: rgb(2, 2, 75);
+        padding: 0;
+        margin: auto;
+        display: block;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+
+      #background {
+        background-color: black;
+      }
+    </style>
+  </head>
+
+  <body id="background">
+    <canvas id="gamescreen" width="800" height="600"></canvas>
+    <!-- <audio id="BGMusic" src="Audio/BGMusic.mp3"></audio>
+    <audio id="Tick1" src="Audio/fx_tick.mp3"></audio>
+    <audio id="Tick2" src="Audio/fx_tick2.mp3"></audio>
+    <audio id="Tick3" src="Audio/fx_tick3.mp3"></audio>
+    <audio id="Go" src="Audio/fx_go.mp3"></audio> -->
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+
+    <!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+    <script src="https://www.gstatic.com/firebasejs/7.12.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.12.0/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.0.15/howler.core.min.js"></script>
+
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyA9OXd3bN1vZ4rWKNcWMx3kLhI7sgejtj8",
+        authDomain: "svrobotics-tetris.firebaseapp.com",
+        databaseURL: "https://svrobotics-tetris.firebaseio.com",
+        projectId: "svrobotics-tetris",
+        storageBucket: "svrobotics-tetris.appspot.com",
+        messagingSenderId: "151636902945",
+        appId: "1:151636902945:web:c990a4c3758b479ecfcf60"
+      };
+      console.log(firebase.initializeApp(firebaseConfig));
+
+      // const database = firebase.database();
+      // console.log(firebase.projectId);
+      database = firebase.database();
+      let canvas = document.getElementById("gamescreen");
+
+      let ctx = canvas.getContext("2d");
+
+      let colors = [
+        "#303030",
+        "#d9b51c",
+        "#800080",
+        "#F51B00",
+        "#50C878",
+        "#26ABFF",
+        "#FFA500",
+        "#003B59",
+        "#111111",
+        "#FFFFFF"
+      ];
+
+      var pixelPosX = [30, 53, 76, 99, 122, 145, 168, 191, 214, 237];
+      var shift = 505;
+      var readyToPlay = false;
+      var pixelPosY = [
+        30,
+        53,
+        76,
+        99,
+        122,
+        145,
+        168,
+        191,
+        214,
+        237,
+        260,
+        283,
+        306,
+        329,
+        352,
+        375,
+        398,
+        421,
+        444,
+        467
+      ];
+
+      var grid = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      ];
+
+      var gridOpp = [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      ];
+
+      var curPieceX = [0, 0, 0, 0];
+      var curPieceY = [0, 0, 0, 0];
+      var curPiece = 0;
+      var curRotation = 1;
+      var piecesDrawn = [false, false, false, false, false, false, false];
+      var gameIsRunning = false;
+      var linesCleared = 0;
+      var numPlayers = 0;
+      var loggedOn = false;
+      var playerNumber = 0;
+      var oppPlayerNumber = 0;
+      var linesClearedOpp = 0;
+      var stackUpWaiting = 0;
+      var stackUpPresent = 0;
+      var alreadyLoggedOut = false;
+
+      var BGMusic = new Howl({
+        src: ["Audio/BGMusic.mp3"]
+      });
+      BGMusic.loop = true;
+      var clearAudio = new Howl({
+        src: ["Audio/fx_combo01.mp3"]
+      });
+      var moveAudio = new Howl({
+        src: ["Audio/fx_fall.mp3"]
+      });
+      var goAudio = new Howl({
+        src: ["Audio/fx_go.mp3"]
+      });
+      var threeAudio = new Howl({
+        src: ["Audio/fx_tick3.mp3"]
+      });
+      var twoAudio = new Howl({
+        src: ["Audio/fx_tick2.mp3"]
+      });
+      var oneAudio = new Howl({
+        src: ["Audio/fx_tick.mp3"]
+      });
+      var hardDropAudio = new Howl({
+        src: ["Audio/fx_hrddp.mp3"]
+      });
+      var tetrisAudio = new Howl({
+        src: ["Audio/vo_tetrs.mp3"]
+      });
+      var winAudio = new Howl({
+        src: ["Audio/vo_uwin.mp3"]
+      });
+      var loseAudio = new Howl({
+        src: ["Audio/vo_ulose.mp3"]
+      });
+
+      var veryStart = true;
+      ctx.fillRect(20, 20, 250, 480);
+      ctx.fillRect(20 + shift, 20, 250, 480);
+      ctx.font = "40px Comic Sans MS";
+      ctx.fillStyle = "#00AABB";
+      ctx.textAlign = "center";
+      ctx.fillText("TETRIS!", canvas.width / 2, canvas.height - 40);
+      ctx.font = "20px Comic Sans MS";
+      ctx.fillStyle = "#FFA500";
+      ctx.textAlign = "center";
+      ctx.fillText("YOU", 146, canvas.height - 70);
+      ctx.fillText("OPPONENT", 656, canvas.height - 70);
+      ctx.fillText("Click Here", canvas.width / 2, 100);
+      ctx.fillText("To Start!", canvas.width / 2, 130);
+
+      // BASIC MATH
+      function pseudoRandomize() {
+        var allDone = true;
+        for (let i = 0; i < 7; i++) {
+          if (!piecesDrawn[i]) allDone = false;
+        }
+        if (allDone)
+          piecesDrawn = [false, false, false, false, false, false, false];
+        var numReturn = getRandom(0, 7);
+        while (piecesDrawn[numReturn]) numReturn = getRandom(0, 7);
+        piecesDrawn[numReturn] = true;
+        return numReturn + 1;
+      }
+
+      function getRandom(min, max) {
+        return Math.trunc(Math.random() * (max - min) + min);
+      }
+
+      function wait(ms) {
+        var d = new Date();
+        var d2 = null;
+        do {
+          d2 = new Date();
+        } while (d2 - d < ms);
+      }
+
+      // GRAPHICS INTERFACE
+      function drawBoardToCanvas() {
+        for (let i = 0; i < 10; i++) {
+          for (let j = 2; j < 22; j++) {
+            ctx.fillStyle = colors[grid[i][j]];
+            ctx.fillRect(pixelPosX[i], pixelPosY[j - 2], 22, 22);
+          }
+        }
+      }
+
+      function drawOppBoardToCanvas() {
+        for (let i = 0; i < 10; i++) {
+          for (let j = 2; j < 22; j++) {
+            ctx.fillStyle = colors[gridOpp[i][j]];
+            ctx.fillRect(pixelPosX[i] + shift, pixelPosY[j - 2], 22, 22);
+          }
+        }
+      }
+      // UPDATING VARIABLES
+      function drawCurPiece() {
+        for (let i = 0; i < 4; i++) {
+          grid[curPieceX[i]][curPieceY[i]] = curPiece;
+        }
+        drawBoardToCanvas();
+      }
+
+      function eraseCurPiece() {
+        for (let i = 0; i < 4; i++) {
+          grid[curPieceX[i]][curPieceY[i]] = 0;
+        }
+        drawBoardToCanvas();
+      }
+
+      function spawnPiece() {
+        curRotation = 1;
+        curPiece = pseudoRandomize();
+        switch (curPiece) {
+          case 1:
+            curPieceX[0] = 4;
+            curPieceX[1] = 5;
+            curPieceX[2] = 4;
+            curPieceX[3] = 5;
+            curPieceY[0] = 1;
+            curPieceY[1] = 1;
+            curPieceY[2] = 2;
+            curPieceY[3] = 2;
+            break;
+          case 2:
+            curPieceX[0] = 5;
+            curPieceX[1] = 4;
+            curPieceX[2] = 5;
+            curPieceX[3] = 6;
+            curPieceY[0] = 1;
+            curPieceY[1] = 2;
+            curPieceY[2] = 2;
+            curPieceY[3] = 2;
+            break;
+          case 3:
+            curPieceX[0] = 3;
+            curPieceX[1] = 4;
+            curPieceX[2] = 4;
+            curPieceX[3] = 5;
+            curPieceY[0] = 1;
+            curPieceY[1] = 1;
+            curPieceY[2] = 2;
+            curPieceY[3] = 2;
+            break;
+          case 4:
+            curPieceX[0] = 4;
+            curPieceX[1] = 5;
+            curPieceX[2] = 5;
+            curPieceX[3] = 6;
+            curPieceY[0] = 2;
+            curPieceY[1] = 2;
+            curPieceY[2] = 1;
+            curPieceY[3] = 1;
+            break;
+          case 5:
+            curPieceX[0] = 3;
+            curPieceX[1] = 4;
+            curPieceX[2] = 5;
+            curPieceX[3] = 6;
+            curPieceY[0] = 2;
+            curPieceY[1] = 2;
+            curPieceY[2] = 2;
+            curPieceY[3] = 2;
+            break;
+          case 6:
+            curPieceX[0] = 4;
+            curPieceX[1] = 5;
+            curPieceX[2] = 6;
+            curPieceX[3] = 6;
+            curPieceY[0] = 2;
+            curPieceY[1] = 2;
+            curPieceY[2] = 2;
+            curPieceY[3] = 1;
+            break;
+          case 7:
+            curPieceX[0] = 4;
+            curPieceX[1] = 4;
+            curPieceX[2] = 5;
+            curPieceX[3] = 6;
+            curPieceY[0] = 1;
+            curPieceY[1] = 2;
+            curPieceY[2] = 2;
+            curPieceY[3] = 2;
+            break;
+          default:
+            break;
+        }
+        if (piecesCollide()) {
+          gameOver();
+        }
+        drawCurPiece();
+      }
+
+      function piecesCollide() {
+        for (let i = 0; i < 4; i++) {
+          if (
+            curPieceX[i] < 0 ||
+            curPieceX[i] > 9 ||
+            curPieceY[i] > 21 ||
+            grid[curPieceX[i]][curPieceY[i]] !== 0
+          )
+            return true;
+        }
+        return false;
+      }
+
+      function movePieceDown() {
+        eraseCurPiece();
+        for (let i = 0; i < 4; i++) {
+          curPieceY[i] += 1;
+        }
+        if (piecesCollide()) {
+          for (let i = 0; i < 4; i++) {
+            curPieceY[i] -= 1;
+          }
+          drawCurPiece();
+          lockPiece();
+        } else drawCurPiece();
+      }
+
+      function hardDrop() {
+        while (true) {
+          eraseCurPiece();
+          for (let i = 0; i < 4; i++) {
+            curPieceY[i] += 1;
+          }
+          if (piecesCollide()) break;
+          drawCurPiece();
+        }
+        for (let i = 0; i < 4; i++) {
+          curPieceY[i] -= 1;
+        }
+        drawCurPiece();
+        lockPiece();
+      }
+
+      function movePieceLeft() {
+        eraseCurPiece();
+        for (let i = 0; i < 4; i++) {
+          curPieceX[i] -= 1;
+        }
+        if (piecesCollide()) {
+          for (let i = 0; i < 4; i++) {
+            curPieceX[i] += 1;
+          }
+        }
+        drawCurPiece();
+      }
+
+      function movePieceRight() {
+        eraseCurPiece();
+        for (let i = 0; i < 4; i++) {
+          curPieceX[i] += 1;
+        }
+        if (piecesCollide()) {
+          for (let i = 0; i < 4; i++) {
+            curPieceX[i] -= 1;
+          }
+        }
+        drawCurPiece();
+      }
+
+      function rotatePiece() {
+        eraseCurPiece();
+        switch (curPiece) {
+          case 2:
+            switch (curRotation) {
+              case 1:
+                curPieceX[0] += 1;
+                curPieceY[0] += 1;
+                curPieceX[1] += 1;
+                curPieceY[1] += -1;
+                curPieceX[2] += 0;
+                curPieceY[2] += 0;
+                curPieceX[3] += -1;
+                curPieceY[3] += 1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 1;
+                  curPieceY[0] -= 1;
+                  curPieceX[1] -= 1;
+                  curPieceY[1] -= -1;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= -1;
+                  curPieceY[3] -= 1;
+                  curRotation -= 1;
+                }
+
+                break;
+              case 2:
+                curPieceX[0] += -1;
+                curPieceY[0] += 1;
+                curPieceX[1] += 1;
+                curPieceY[1] += 1;
+                curPieceX[2] += 0;
+                curPieceY[2] += 0;
+                curPieceX[3] += -1;
+                curPieceY[3] += -1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= -1;
+                  curPieceY[0] -= 1;
+                  curPieceX[1] -= 1;
+                  curPieceY[1] -= 1;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= -1;
+                  curPieceY[3] -= -1;
+                  curRotation -= 1;
+                }
+                break;
+              case 3:
+                curPieceX[0] += -1;
+                curPieceY[0] += -1;
+                curPieceX[1] += -1;
+                curPieceY[1] += 1;
+                curPieceX[2] += 0;
+                curPieceY[2] += 0;
+                curPieceX[3] += 1;
+                curPieceY[3] += -1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= -1;
+                  curPieceY[0] -= -1;
+                  curPieceX[1] -= -1;
+                  curPieceY[1] -= 1;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= 1;
+                  curPieceY[3] -= -1;
+                  curRotation -= 1;
+                }
+                break;
+              case 4:
+                curPieceX[0] += 1;
+                curPieceY[0] += -1;
+                curPieceX[1] += -1;
+                curPieceY[1] += -1;
+                curPieceX[2] += 0;
+                curPieceY[2] += 0;
+                curPieceX[3] += 1;
+                curPieceY[3] += 1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 1;
+                  curPieceY[0] -= -1;
+                  curPieceX[1] -= -1;
+                  curPieceY[1] -= -1;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= 1;
+                  curPieceY[3] -= 1;
+                  curRotation -= 1;
+                }
+                break;
+
+              default:
+                break;
+            }
+            break;
+
+          case 3:
+            switch (curRotation) {
+              case 1:
+                curPieceX[0] += 2;
+                curPieceY[0] += 0;
+                curPieceX[1] += 1;
+                curPieceY[1] += 1;
+                curPieceX[2] += 0;
+                curPieceY[2] += 0;
+                curPieceX[3] += -1;
+                curPieceY[3] += 1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 2;
+                  curPieceY[0] -= 0;
+                  curPieceX[1] -= 1;
+                  curPieceY[1] -= 1;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= -1;
+                  curPieceY[3] -= 1;
+                  curRotation -= 1;
+                }
+                break;
+              case 2:
+                curPieceX[0] += 0;
+                curPieceY[0] += 2;
+                curPieceX[1] += -1;
+                curPieceY[1] += 1;
+                curPieceX[2] += 0;
+                curPieceY[2] += 0;
+                curPieceX[3] += -1;
+                curPieceY[3] += -1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 0;
+                  curPieceY[0] -= 2;
+                  curPieceX[1] -= -1;
+                  curPieceY[1] -= 1;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= -1;
+                  curPieceY[3] -= -1;
+                  curRotation -= 1;
+                }
+                break;
+              case 3:
+                curPieceX[0] += -2;
+                curPieceY[0] += 0;
+                curPieceX[1] += -1;
+                curPieceY[1] += -1;
+                curPieceX[2] += 0;
+                curPieceY[2] += 0;
+                curPieceX[3] += 1;
+                curPieceY[3] += -1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= -2;
+                  curPieceY[0] -= 0;
+                  curPieceX[1] -= -1;
+                  curPieceY[1] -= -1;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= 1;
+                  curPieceY[3] -= -1;
+                  curRotation -= 1;
+                }
+                break;
+              case 4:
+                curPieceX[0] += 0;
+                curPieceY[0] += -2;
+                curPieceX[1] += 1;
+                curPieceY[1] += -1;
+                curPieceX[2] += 0;
+                curPieceY[2] += 0;
+                curPieceX[3] += 1;
+                curPieceY[3] += 1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 0;
+                  curPieceY[0] -= -2;
+                  curPieceX[1] -= 1;
+                  curPieceY[1] -= -1;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= 1;
+                  curPieceY[3] -= 1;
+                  curRotation -= 1;
+                }
+                break;
+
+              default:
+                break;
+            }
+            break;
+
+          case 4:
+            switch (curRotation) {
+              case 1:
+                curPieceX[0] += 1;
+                curPieceY[0] += -1;
+                curPieceX[1] += 0;
+                curPieceY[1] += 0;
+                curPieceX[2] += 1;
+                curPieceY[2] += 1;
+                curPieceX[3] += 0;
+                curPieceY[3] += 2;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 1;
+                  curPieceY[0] -= -1;
+                  curPieceX[1] -= 0;
+                  curPieceY[1] -= 0;
+                  curPieceX[2] -= 1;
+                  curPieceY[2] -= 1;
+                  curPieceX[3] -= 0;
+                  curPieceY[3] -= 2;
+                  curRotation -= 1;
+                }
+                break;
+              case 2:
+                curPieceX[0] += 1;
+                curPieceY[0] += 1;
+                curPieceX[1] += 0;
+                curPieceY[1] += 0;
+                curPieceX[2] += -1;
+                curPieceY[2] += 1;
+                curPieceX[3] += -2;
+                curPieceY[3] += 0;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 1;
+                  curPieceY[0] -= 1;
+                  curPieceX[1] -= 0;
+                  curPieceY[1] -= 0;
+                  curPieceX[2] -= -1;
+                  curPieceY[2] -= 1;
+                  curPieceX[3] -= -2;
+                  curPieceY[3] -= 0;
+                  curRotation -= 1;
+                }
+                break;
+              case 3:
+                curPieceX[0] += -1;
+                curPieceY[0] += 1;
+                curPieceX[1] += 0;
+                curPieceY[1] += 0;
+                curPieceX[2] += -1;
+                curPieceY[2] += -1;
+                curPieceX[3] += 0;
+                curPieceY[3] += -2;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= -1;
+                  curPieceY[0] -= 1;
+                  curPieceX[1] -= 0;
+                  curPieceY[1] -= 0;
+                  curPieceX[2] -= -1;
+                  curPieceY[2] -= -1;
+                  curPieceX[3] -= 0;
+                  curPieceY[3] -= -2;
+                  curRotation -= 1;
+                }
+                break;
+              case 4:
+                curPieceX[0] += -1;
+                curPieceY[0] += -1;
+                curPieceX[1] += 0;
+                curPieceY[1] += 0;
+                curPieceX[2] += 1;
+                curPieceY[2] += -1;
+                curPieceX[3] += 2;
+                curPieceY[3] += 0;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= -1;
+                  curPieceY[0] -= -1;
+                  curPieceX[1] -= 0;
+                  curPieceY[1] -= 0;
+                  curPieceX[2] -= 1;
+                  curPieceY[2] -= -1;
+                  curPieceX[3] -= 2;
+                  curPieceY[3] -= 0;
+                  curRotation -= 1;
+                }
+                break;
+
+              default:
+                break;
+            }
+            break;
+
+          case 5:
+            switch (curRotation) {
+              case 1:
+                curPieceX[0] += 2;
+                curPieceY[0] += -1;
+                curPieceX[1] += 1;
+                curPieceY[1] += 0;
+                curPieceX[2] += 0;
+                curPieceY[2] += 1;
+                curPieceX[3] += -1;
+                curPieceY[3] += 2;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 2;
+                  curPieceY[0] -= -1;
+                  curPieceX[1] -= 1;
+                  curPieceY[1] -= 0;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 1;
+                  curPieceX[3] -= -1;
+                  curPieceY[3] -= 2;
+                  curRotation -= 1;
+                }
+                break;
+              case 2:
+                curPieceX[0] += 1;
+                curPieceY[0] += 2;
+                curPieceX[1] += 0;
+                curPieceY[1] += 1;
+                curPieceX[2] += -1;
+                curPieceY[2] += 0;
+                curPieceX[3] += -2;
+                curPieceY[3] += -1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 1;
+                  curPieceY[0] -= 2;
+                  curPieceX[1] -= 0;
+                  curPieceY[1] -= 1;
+                  curPieceX[2] -= -1;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= -2;
+                  curPieceY[3] -= -1;
+                  curRotation -= 1;
+                }
+                break;
+              case 3:
+                curPieceX[0] += -2;
+                curPieceY[0] += 1;
+                curPieceX[1] += -1;
+                curPieceY[1] += 0;
+                curPieceX[2] += 0;
+                curPieceY[2] += -1;
+                curPieceX[3] += 1;
+                curPieceY[3] += -2;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= -2;
+                  curPieceY[0] -= 1;
+                  curPieceX[1] -= -1;
+                  curPieceY[1] -= 0;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= -1;
+                  curPieceX[3] -= 1;
+                  curPieceY[3] -= -2;
+                  curRotation -= 1;
+                }
+                break;
+              case 4:
+                curPieceX[0] += -1;
+                curPieceY[0] += -2;
+                curPieceX[1] += 0;
+                curPieceY[1] += -1;
+                curPieceX[2] += 1;
+                curPieceY[2] += 0;
+                curPieceX[3] += 2;
+                curPieceY[3] += 1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= -1;
+                  curPieceY[0] -= -2;
+                  curPieceX[1] -= 0;
+                  curPieceY[1] -= -1;
+                  curPieceX[2] -= 1;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= 2;
+                  curPieceY[3] -= 1;
+                  curRotation -= 1;
+                }
+                break;
+
+              default:
+                break;
+            }
+            break;
+
+          case 6:
+            switch (curRotation) {
+              case 1:
+                curPieceX[0] += 1;
+                curPieceY[0] += -1;
+                curPieceX[1] += 0;
+                curPieceY[1] += 0;
+                curPieceX[2] += -1;
+                curPieceY[2] += 1;
+                curPieceX[3] += 0;
+                curPieceY[3] += 2;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 1;
+                  curPieceY[0] -= -1;
+                  curPieceX[1] -= 0;
+                  curPieceY[1] -= 0;
+                  curPieceX[2] -= -1;
+                  curPieceY[2] -= 1;
+                  curPieceX[3] -= 0;
+                  curPieceY[3] -= 2;
+                  curRotation -= 1;
+                }
+                break;
+              case 2:
+                curPieceX[0] += 1;
+                curPieceY[0] += 1;
+                curPieceX[1] += 0;
+                curPieceY[1] += 0;
+                curPieceX[2] += -1;
+                curPieceY[2] += -1;
+                curPieceX[3] += -2;
+                curPieceY[3] += 0;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 1;
+                  curPieceY[0] -= 1;
+                  curPieceX[1] -= 0;
+                  curPieceY[1] -= 0;
+                  curPieceX[2] -= -1;
+                  curPieceY[2] -= -1;
+                  curPieceX[3] -= -2;
+                  curPieceY[3] -= 0;
+                  curRotation -= 1;
+                }
+                break;
+              case 3:
+                curPieceX[0] += -1;
+                curPieceY[0] += 1;
+                curPieceX[1] += 0;
+                curPieceY[1] += 0;
+                curPieceX[2] += 1;
+                curPieceY[2] += -1;
+                curPieceX[3] += 0;
+                curPieceY[3] += -2;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= -1;
+                  curPieceY[0] -= 1;
+                  curPieceX[1] -= 0;
+                  curPieceY[1] -= 0;
+                  curPieceX[2] -= 1;
+                  curPieceY[2] -= -1;
+                  curPieceX[3] -= 0;
+                  curPieceY[3] -= -2;
+                  curRotation -= 1;
+                }
+                break;
+              case 4:
+                curPieceX[0] += -1;
+                curPieceY[0] += -1;
+                curPieceX[1] += 0;
+                curPieceY[1] += 0;
+                curPieceX[2] += 1;
+                curPieceY[2] += 1;
+                curPieceX[3] += 2;
+                curPieceY[3] += 0;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= -1;
+                  curPieceY[0] -= -1;
+                  curPieceX[1] -= 0;
+                  curPieceY[1] -= 0;
+                  curPieceX[2] -= 1;
+                  curPieceY[2] -= 1;
+                  curPieceX[3] -= 2;
+                  curPieceY[3] -= 0;
+                  curRotation -= 1;
+                }
+                break;
+
+              default:
+                break;
+            }
+            break;
+
+          case 7:
+            switch (curRotation) {
+              case 1:
+                curPieceX[0] += 2;
+                curPieceY[0] += 0;
+                curPieceX[1] += 1;
+                curPieceY[1] += -1;
+                curPieceX[2] += 0;
+                curPieceY[2] += 0;
+                curPieceX[3] += -1;
+                curPieceY[3] += 1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 2;
+                  curPieceY[0] -= 0;
+                  curPieceX[1] -= 1;
+                  curPieceY[1] -= -1;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= -1;
+                  curPieceY[3] -= 1;
+                  curRotation -= 1;
+                }
+                break;
+              case 2:
+                curPieceX[0] += 0;
+                curPieceY[0] += 2;
+                curPieceX[1] += 1;
+                curPieceY[1] += 1;
+                curPieceX[2] += 0;
+                curPieceY[2] += 0;
+                curPieceX[3] += -1;
+                curPieceY[3] += -1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 0;
+                  curPieceY[0] -= 2;
+                  curPieceX[1] -= 1;
+                  curPieceY[1] -= 1;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= -1;
+                  curPieceY[3] -= -1;
+                  curRotation -= 1;
+                }
+                break;
+              case 3:
+                curPieceX[0] += -2;
+                curPieceY[0] += 0;
+                curPieceX[1] += -1;
+                curPieceY[1] += 1;
+                curPieceX[2] += 0;
+                curPieceY[2] += 0;
+                curPieceX[3] += 1;
+                curPieceY[3] += -1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= -2;
+                  curPieceY[0] -= 0;
+                  curPieceX[1] -= -1;
+                  curPieceY[1] -= 1;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= 1;
+                  curPieceY[3] -= -1;
+                  curRotation -= 1;
+                }
+                break;
+              case 4:
+                curPieceX[0] += 0;
+                curPieceY[0] += -2;
+                curPieceX[1] += -1;
+                curPieceY[1] += -1;
+                curPieceX[2] += 0;
+                curPieceY[2] += 0;
+                curPieceX[3] += 1;
+                curPieceY[3] += 1;
+                curRotation += 1;
+                if (piecesCollide()) {
+                  curPieceX[0] -= 0;
+                  curPieceY[0] -= -2;
+                  curPieceX[1] -= -1;
+                  curPieceY[1] -= -1;
+                  curPieceX[2] -= 0;
+                  curPieceY[2] -= 0;
+                  curPieceX[3] -= 1;
+                  curPieceY[3] -= 1;
+                  curRotation -= 1;
+                }
+                break;
+
+              default:
+                break;
+            }
+            break;
+          default:
+            break;
+        }
+        if (curRotation === 5) curRotation = 1;
+        drawCurPiece();
+      }
+
+      function tick() {
+        if (readyToPlay) {
+          window.setTimeout(begin, 500);
+          readyToPlay = false;
+        }
+        if (gameIsRunning) {
+          movePieceDown();
+          var opp = "player" + playerNumber.toString();
+          database.ref().update({ [opp]: grid });
+        }
+      }
+
+      function lockPiece() {
+        var numLinesCleared = 0;
+        for (let i = 21; i >= 0; i--) {
+          var lineClear = true;
+          for (let j = 0; j < 10; j++) {
+            if (grid[j][i] === 0 || grid[j][i] === 8) {
+              lineClear = false;
+            }
+          }
+          if (lineClear) {
+            numLinesCleared += 1;
+            for (let x = i; x > 0; x--) {
+              for (let y = 0; y < 10; y++) {
+                grid[y][x] = grid[y][x - 1];
+              }
+            }
+            i += 1;
+          }
+        }
+        stackUpPresent += stackUpWaiting;
+        stackUpWaiting = 0;
+        if (numLinesCleared === 4) {
+          tetrisAudio.play();
+        } else if (numLinesCleared > 0) {
+          clearAudio.play();
+        }
+        while (stackUpPresent > 0 && numLinesCleared > 0) {
+          numLinesCleared -= 1;
+          stackUpPresent -= 1;
+        }
+        linesCleared += numLinesCleared;
+        for (let i = 21; i >= 0; i--) {
+          for (let j = 0; j <= 9; j++) {
+            if (grid[j][i] === 8) {
+              grid[j][i] = 0;
+            }
+          }
+        }
+        var bottomRowIsEmpty = true;
+        do {
+          for (let i = 0; i <= 9; i++) {
+            if (grid[i][21] !== 0) {
+              bottomRowIsEmpty = false;
+            }
+          }
+          if (bottomRowIsEmpty) {
+            for (let i = 21; i >= 0; i--) {
+              for (let j = 0; j <= 9; j++) {
+                grid[j][i + 1] = grid[j][i];
+              }
+            }
+          }
+        } while (bottomRowIsEmpty);
+        for (let i = 0; i < stackUpPresent; i++) {
+          console.log(stackUpPresent);
+
+          for (let j = 0; j <= 21; j++) {
+            for (let k = 0; k <= 9; k++) {
+              try {
+                grid[k][j - 1 - i] = grid[k][j - i];
+              } catch (err) {}
+            }
+          }
+        }
+        for (let i = 21; i > 21 - stackUpPresent; i--) {
+          console.log(stackUpPresent);
+
+          for (let j = 0; j <= 9; j++) {
+            grid[j][i] = 8;
+          }
+        }
+        ctx.fillStyle = "#ffffff";
+        roundRect(ctx, 280, 30, 10, 460, 8, true, false);
+        var opp = "player" + playerNumber + "LinesCleared";
+        database.ref().update({ [opp]: linesCleared });
+        spawnPiece();
+      }
+
+      function gameOver() {
+        BGMusic.pause();
+        loseAudio.play();
+        gameIsRunning = false;
+        var oppr = "player" + playerNumber + "IsAlive";
+        var opp = "player" + playerNumber.toString();
+        drawCurPiece();
+        database.ref().update({ [opp]: grid });
+        database.ref().update({ [oppr]: 0 });
+        database.ref().update({ numPlayers: 0 });
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "50px Comic Sans MS";
+        ctx.fillText("YOU", canvas.width / 2, 200);
+        ctx.fillText("LOSE!", canvas.width / 2, 250);
+        playerNumber = 0;
+        oppPlayerNumber = 0;
+        alreadyLoggedOut = true;
+        window.setTimeout(showLose, 80);
+      }
+
+      function showLose() {
+        for (let i = 0; i <= 9; i++) {
+          grid[i][tracker] = 3;
+          gridOpp[i][21 - tracker] = 4;
+        }
+        drawBoardToCanvas();
+        drawOppBoardToCanvas();
+        tracker++;
+        if (tracker !== 22) {
+          window.setTimeout(showLose, 80);
+        }
+      }
+
+      function receieveLines(num) {
+        console.log(num);
+      }
+
+      // KEY LISTENER
+      document.addEventListener("keydown", function(event) {
+        if (gameIsRunning) {
+          if (event.keyCode === 40) {
+            moveAudio.play();
+            movePieceDown();
+          } else if (event.keyCode === 39) {
+            moveAudio.play();
+            movePieceRight();
+          } else if (event.keyCode === 37) {
+            moveAudio.play();
+            movePieceLeft();
+          } else if (event.keyCode === 38) {
+            moveAudio.play();
+            rotatePiece();
+          } else if (event.keyCode === 32) {
+            hardDropAudio.play();
+            hardDrop();
+          }
+          var opp = "player" + playerNumber.toString();
+          database.ref().update({ [opp]: grid });
+        }
+      });
+
+      spawnPiece();
+
+      window.onclick = function() {
+        if (veryStart) {
+          ctx.fillStyle = "#02024B";
+          ctx.fillRect(320, 50, 200, 300);
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillText("Waiting For", canvas.width / 2, 100);
+          ctx.fillText("Opponent...", canvas.width / 2, 130);
+          database.ref("numPlayers").on("value", function(snapshot) {
+            if (!loggedOn) {
+              numPlayers = snapshot.val() + 1;
+              loggedOn = true;
+              playerNumber = numPlayers;
+              if (numPlayers >= 3) {
+                alert("Sorry! Game is full right now! Please try again later!");
+                alreadyLoggedOut = true;
+              } else {
+                oppPlayerNumber = playerNumber === 1 ? 2 : 1;
+                database.ref().update({ numPlayers: numPlayers });
+              }
+            } else {
+              numPlayers = snapshot.val();
+            }
+            if (numPlayers === 1) {
+              if (gameIsRunning) {
+                ctx.fillStyle = "#02024B";
+                ctx.fillRect(320, 50, 200, 300);
+                ctx.fillStyle = "#FFFFFF";
+                ctx.font = "30px Comic Sans MS";
+                ctx.fillText("Opponent Left", canvas.width / 2, 100);
+                ctx.fillText("The Game!", canvas.width / 2, 130);
+                gameWin();
+                database.ref().update({ numPlayers: 0 });
+                playerNumber = 0;
+                oppPlayerNumber = 0;
+                alreadyLoggedOut = true;
+              } else {
+                var opp = "player" + playerNumber.toString();
+                database.ref().update({ [opp]: grid });
+                var oopp = "player" + oppPlayerNumber.toString();
+                database.ref().update({ [oopp]: grid });
+                var ooppp = opp + "LinesCleared";
+                var oooppp = oopp + "LinesCleared";
+                var ooooppp = opp + "IsAlive";
+                var oooopppp = oopp + "IsAlive";
+                database.ref().update({ [ooppp]: 0 });
+                database.ref().update({ [oooppp]: 0 });
+                database.ref().update({ [ooooppp]: 1 });
+                database.ref().update({ [oooopppp]: 1 });
+              }
+            }
+            if (numPlayers === 2) {
+              var opp = "player" + oppPlayerNumber.toString();
+              database.ref(opp).on("value", function(snapshot) {
+                gridOpp = snapshot.val();
+                drawOppBoardToCanvas();
+              });
+              database
+                .ref(opp + "LinesCleared")
+                .on("value", function(snapshot) {
+                  stackUpWaiting += snapshot.val() - linesClearedOpp;
+                  linesClearedOpp = snapshot.val();
+                  ctx.fillStyle = "#ffffff";
+                  roundRect(ctx, 280, 30, 10, 460, 8, true, false);
+                  ctx.fillStyle = "#AA0000";
+                  var height = stackUpWaiting * 22;
+                  if (height > 0)
+                    roundRect(
+                      ctx,
+                      280,
+                      490 - height,
+                      10,
+                      height,
+                      8,
+                      true,
+                      false
+                    );
+                });
+              database.ref(opp + "IsAlive").on("value", function(snapshot) {
+                if (snapshot.val() === 0) {
+                  gameWin();
+                }
+              });
+              ctx.fillStyle = "#02024B";
+              ctx.fillRect(320, 50, 200, 300);
+              readyToPlay = true;
+            }
+          });
+          veryStart = false;
+        }
+      };
+      function begin() {
+        ctx.fillStyle = "#02024B";
+        ctx.fillRect(320, 50, 200, 300);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "60px Comic Sans MS";
+        ctx.fillText("3", canvas.width / 2, 100);
+        try {
+          window.focus();
+          threeAudio.play();
+        } catch (err) {}
+        window.setTimeout(two, 800);
+      }
+
+      var tracker = 0;
+      function gameWin() {
+        BGMusic.pause();
+        winAudio.play();
+        gameIsRunning = false;
+        alreadyLoggedOut = true;
+        playerNumber = 0;
+        oppPlayerNumber = 0;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "50px Comic Sans MS";
+        ctx.fillText("YOU", canvas.width / 2, 200);
+        ctx.fillText("WIN!", canvas.width / 2, 250);
+        window.setTimeout(showWin, 80);
+      }
+
+      function showWin() {
+        for (let i = 0; i <= 9; i++) {
+          grid[i][tracker] = 4;
+          gridOpp[i][21 - tracker] = 3;
+        }
+        drawBoardToCanvas();
+        drawOppBoardToCanvas();
+        tracker++;
+        if (tracker !== 22) {
+          window.setTimeout(showWin, 80);
+        }
+      }
+
+      function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+        if (typeof stroke === "undefined") {
+          stroke = true;
+        }
+        if (typeof radius === "undefined") {
+          radius = 5;
+        }
+        if (typeof radius === "number") {
+          radius = { tl: radius, tr: radius, br: radius, bl: radius };
+        } else {
+          var defaultRadius = { tl: 0, tr: 0, br: 0, bl: 0 };
+          for (var side in defaultRadius) {
+            radius[side] = radius[side] || defaultRadius[side];
+          }
+        }
+        ctx.beginPath();
+        ctx.moveTo(x + radius.tl, y);
+        ctx.lineTo(x + width - radius.tr, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+        ctx.lineTo(x + width, y + height - radius.br);
+        ctx.quadraticCurveTo(
+          x + width,
+          y + height,
+          x + width - radius.br,
+          y + height
+        );
+        ctx.lineTo(x + radius.bl, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+        ctx.lineTo(x, y + radius.tl);
+        ctx.quadraticCurveTo(x, y, x + radius.tl, y);
+        ctx.closePath();
+        if (fill) {
+          ctx.fill();
+        }
+        if (stroke) {
+          ctx.stroke();
+        }
+      }
+
+      function two() {
+        ctx.fillStyle = "#02024B";
+        ctx.fillRect(320, 50, 200, 300);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "60px Comic Sans MS";
+        ctx.fillText("2", canvas.width / 2, 100);
+        try {
+          window.focus();
+          twoAudio.play();
+        } catch (err) {}
+        window.setTimeout(one, 800);
+      }
+
+      function one() {
+        ctx.fillStyle = "#02024B";
+        ctx.fillRect(320, 50, 200, 300);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "60px Comic Sans MS";
+        ctx.fillText("1", canvas.width / 2, 100);
+        try {
+          window.focus();
+          oneAudio.play();
+        } catch (err) {}
+        window.setTimeout(go, 800);
+      }
+
+      function go() {
+        ctx.fillStyle = "#02024B";
+        ctx.fillRect(320, 50, 200, 300);
+        ctx.fillStyle = "#00AA11";
+        ctx.font = "60px Comic Sans MS";
+        ctx.fillText("G0!", canvas.width / 2, 100);
+        try {
+          window.focus();
+          goAudio.play();
+        } catch (err) {}
+        window.setTimeout(startMusic, 200);
+      }
+      function startMusic() {
+        ctx.fillStyle = "#02024B";
+        ctx.fillRect(320, 50, 200, 300);
+        try {
+          window.focus();
+          BGMusic.play();
+        } catch (err) {}
+        gameIsRunning = true;
+      }
+      drawOppBoardToCanvas();
+      window.setInterval(tick, 500);
+      window.addEventListener("beforeunload", function(e) {
+        if (!alreadyLoggedOut && !veryStart)
+          database.ref().update({ numPlayers: numPlayers - 1 });
+      });
+      ctx.fillStyle = "#ffffff";
+      roundRect(ctx, 280, 30, 10, 460, 8, true, false);
+    </script>
+  </body>
+</html>
